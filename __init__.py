@@ -22,7 +22,7 @@ def load_key():
 key = load_key()
 fernet = Fernet(key)
 
-@app.route('/')
+@app.route('/', methods=['GET','POST'])
 def hello_world():
     return render_template('hello.html')  # Assure-toi que hello.html existe
 
