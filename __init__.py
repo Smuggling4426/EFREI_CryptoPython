@@ -1,7 +1,6 @@
 from cryptography.fernet import Fernet
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import base64
-import traceback  # Ajouté pour afficher les erreurs complètes
 
 app = Flask(__name__)
 
@@ -13,33 +12,33 @@ def generate_key_from_input(user_key):
     key_bytes = user_key.encode()
     return base64.urlsafe_b64encode(key_bytes)  # Convertir en clé Fernet valide
 
-@app.route('/')
+@app.route("/", methods=["GET", "POST"])
 def index():
-    return render_template('index.html')  # Assure-toi que "index.html" est bien présent
+    encrypted_text = ""
+    decrypted_text = ""
 
-# 🔐 Route pour chiffrer avec une clé personnalisée
-@app.route('/encrypt/<user_key>/<val>')
-def encrypt(user_key, val):
-    try:
+    if request.method == "POST":
+        action = request.form.get("action")
+        user_key = request.form.get("user_key")
+        value = request.form.get("value")
+
+        if not user_key or not value:
+            return render_template("index.html", encrypted_text="Erreur : Remplissez tous les champs", decrypted_text="")
+
         key = generate_key_from_input(user_key)
         fernet = Fernet(key)
-        encrypted = fernet.encrypt(val.encode())
-        encrypted_safe = base64.urlsafe_b64encode(encrypted).decode()  # Encodage URL-safe
-        return encrypted_safe
-    except Exception as e:
-        return f"Erreur d'encryption : {str(e)}\n{traceback.format_exc()}"  # Afficher l'erreur complète
 
-# 🔓 Route pour déchiffrer avec une clé personnalisée
-@app.route('/decrypt/<user_key>/<val>')
-def decrypt(user_key, val):
-    try:
-        key = generate_key_from_input(user_key)
-        fernet = Fernet(key)
-        val = base64.urlsafe_b64decode(val.encode())  # Décodage URL-safe
-        decrypted = fernet.decrypt(val)
-        return decrypted.decode()
-    except Exception as e:
-        return f"Erreur de déchiffrement : {str(e)}\n{traceback.format_exc()}"  # Afficher l'erreur complète
+        try:
+            if action == "encrypt":
+                encrypted_bytes = fernet.encrypt(value.encode())
+                encrypted_text = base64.urlsafe_b64encode(encrypted_bytes).decode()
+            elif action == "decrypt":
+                decoded_val = base64.urlsafe_b64decode(value.encode())
+                decrypted_text = fernet.decrypt(decoded_val).decode()
+        except Exception as e:
+            return render_template("index.html", encrypted_text=f"Erreur : {str(e)}", decrypted_text="")
+
+    return render_template("index.html", encrypted_text=encrypted_text, decrypted_text=decrypted_text)
 
 if __name__ == "__main__":
-    app.run(debug=True)  # 🔍 Active le mode debug pour voir les erreurs dans le terminal
+    app.run(debug=True)
