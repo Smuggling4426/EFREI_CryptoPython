@@ -1,43 +1,37 @@
 from cryptography.fernet import Fernet
 from flask import Flask, render_template
-import os
+import base64
 
 app = Flask(__name__)
 
-# 📌 Fonction pour charger ou générer une clé persistante
-KEY_FILE = "secret.key"
-
-def load_key():
-    if os.path.exists(KEY_FILE):
-        with open(KEY_FILE, "rb") as key_file:
-            return key_file.read()
-    else:
-        key = Fernet.generate_key()
-        with open(KEY_FILE, "wb") as key_file:
-            key_file.write(key)
-        return key
-
-# Charger la clé une seule fois au démarrage
-key = load_key()
-fernet = Fernet(key)
+# 🔑 Fonction pour générer une clé à partir de la saisie utilisateur
+def generate_key_from_input(user_key):
+    key_bytes = user_key.encode().ljust(32, b'0')[:32]  # Pad ou tronquer à 32 bytes
+    return base64.urlsafe_b64encode(key_bytes)
 
 @app.route('/')
-def hello_world():
-    return render_template('hello.html')  # Assure-toi que hello.html existe
+def index():
+    return render_template('index.html')  # Assure-toi d'avoir "index.html" dans le même dossier que app.py
 
-@app.route('/encrypt/<string:valeur>')
-def encryptage(valeur):
+# 🔐 Route pour chiffrer avec une clé personnalisée
+@app.route('/encrypt/<user_key>/<val>')
+def encrypt(user_key, val):
     try:
-        token = fernet.encrypt(valeur.encode())
-        return f"Valeur encryptée : {token.decode()}"
+        key = generate_key_from_input(user_key)
+        fernet = Fernet(key)
+        encrypted = fernet.encrypt(val.encode())
+        return encrypted.decode()
     except Exception as e:
-        return f"Erreur d'encryptage : {str(e)}"
+        return f"Erreur d'encryption : {str(e)}"
 
-@app.route('/decrypt/<string:valeur>')
-def decryptage(valeur):
+# 🔓 Route pour déchiffrer avec une clé personnalisée
+@app.route('/decrypt/<user_key>/<val>')
+def decrypt(user_key, val):
     try:
-        decrypted = fernet.decrypt(valeur.encode())
-        return f"Valeur décryptée : {decrypted.decode()}"
+        key = generate_key_from_input(user_key)
+        fernet = Fernet(key)
+        decrypted = fernet.decrypt(val.encode())
+        return decrypted.decode()
     except Exception as e:
         return f"Erreur de déchiffrement : {str(e)}"
 
