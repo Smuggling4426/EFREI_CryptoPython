@@ -9,7 +9,7 @@
     <h2>Chiffrement et Déchiffrement avec Clé Personnelle</h2>
 
     <!-- Formulaire pour chiffrer -->
-    <form method="POST">
+    <form method="POST" action="/">
         <label for="user_key">Clé personnelle :</label>
         <input type="text" name="user_key" required><br><br>
 
@@ -26,7 +26,7 @@
     <hr>
 
     <!-- Formulaire pour déchiffrer -->
-    <form method="POST">
+    <form method="POST" action="/">
         <label for="user_key">Clé personnelle :</label>
         <input type="text" name="user_key" required><br><br>
 
@@ -39,5 +39,6 @@
 
     <h3>Voici votre valeur décryptée :</h3>
     <p>{{ decrypted_text }}</p>
+
 </body>
 </html>
