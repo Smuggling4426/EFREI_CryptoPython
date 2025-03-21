@@ -4,14 +4,17 @@ import base64
 
 app = Flask(__name__)
 
-# 🔑 Fonction pour générer une clé à partir de la saisie utilisateur
+# 🔑 Fonction pour générer une clé Fernet valide à partir d'une clé utilisateur
 def generate_key_from_input(user_key):
-    key_bytes = user_key.encode().ljust(32, b'0')[:32]  # Pad ou tronquer à 32 bytes
-    return base64.urlsafe_b64encode(key_bytes)
+    while len(user_key) < 32:
+        user_key += "0"  # Remplir jusqu'à 32 caractères
+    user_key = user_key[:32]  # Tronquer si trop long
+    key_bytes = user_key.encode()
+    return base64.urlsafe_b64encode(key_bytes)  # Convertir en clé Fernet valide
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # Assure-toi d'avoir "index.html" dans le même dossier que app.py
+    return render_template('index.html')  # Assure-toi d'avoir "index.html" dans le même dossier
 
 # 🔐 Route pour chiffrer avec une clé personnalisée
 @app.route('/encrypt/<user_key>/<val>')
@@ -20,7 +23,8 @@ def encrypt(user_key, val):
         key = generate_key_from_input(user_key)
         fernet = Fernet(key)
         encrypted = fernet.encrypt(val.encode())
-        return encrypted.decode()
+        encrypted_safe = base64.urlsafe_b64encode(encrypted).decode()  # Encodage URL-safe
+        return encrypted_safe
     except Exception as e:
         return f"Erreur d'encryption : {str(e)}"
 
@@ -30,7 +34,8 @@ def decrypt(user_key, val):
     try:
         key = generate_key_from_input(user_key)
         fernet = Fernet(key)
-        decrypted = fernet.decrypt(val.encode())
+        val = base64.urlsafe_b64decode(val.encode())  # Décodage URL-safe
+        decrypted = fernet.decrypt(val)
         return decrypted.decode()
     except Exception as e:
         return f"Erreur de déchiffrement : {str(e)}"
