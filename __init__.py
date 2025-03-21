@@ -1,6 +1,7 @@
 from cryptography.fernet import Fernet
 from flask import Flask, render_template
 import base64
+import traceback  # Ajouté pour afficher les erreurs complètes
 
 app = Flask(__name__)
 
@@ -14,7 +15,7 @@ def generate_key_from_input(user_key):
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # Assure-toi d'avoir "index.html" dans le même dossier
+    return render_template('index.html')  # Assure-toi que "index.html" est bien présent
 
 # 🔐 Route pour chiffrer avec une clé personnalisée
 @app.route('/encrypt/<user_key>/<val>')
@@ -26,7 +27,7 @@ def encrypt(user_key, val):
         encrypted_safe = base64.urlsafe_b64encode(encrypted).decode()  # Encodage URL-safe
         return encrypted_safe
     except Exception as e:
-        return f"Erreur d'encryption : {str(e)}"
+        return f"Erreur d'encryption : {str(e)}\n{traceback.format_exc()}"  # Afficher l'erreur complète
 
 # 🔓 Route pour déchiffrer avec une clé personnalisée
 @app.route('/decrypt/<user_key>/<val>')
@@ -38,7 +39,7 @@ def decrypt(user_key, val):
         decrypted = fernet.decrypt(val)
         return decrypted.decode()
     except Exception as e:
-        return f"Erreur de déchiffrement : {str(e)}"
+        return f"Erreur de déchiffrement : {str(e)}\n{traceback.format_exc()}"  # Afficher l'erreur complète
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True)  # 🔍 Active le mode debug pour voir les erreurs dans le terminal
