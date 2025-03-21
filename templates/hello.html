@@ -1,3 +1,49 @@
-<!doctype html>
-<title>CryptoPython</title>
-<h1>Bienvue dans votre atelier CryptoPython !</h1>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptage & Décryptage</title>
+</head>
+<body>
+    <h2>Chiffrement et Déchiffrement avec Clé Personnelle</h2>
+    
+    <label for="key">Clé personnelle :</label>
+    <input type="text" id="key" placeholder="Entrez votre clé..."><br><br>
+
+    <label for="value">Valeur :</label>
+    <input type="text" id="value" placeholder="Entrez la valeur..."><br><br>
+
+    <button onclick="encrypt()">🔐 Chiffrer</button>
+    <button onclick="decrypt()">🔓 Déchiffrer</button>
+
+    <h3>Résultat :</h3>
+    <p id="result"></p>
+
+    <script>
+        async function encrypt() {
+            let key = document.getElementById("key").value;
+            let value = document.getElementById("value").value;
+            if (!key || !value) {
+                alert("Veuillez remplir tous les champs !");
+                return;
+            }
+            let response = await fetch(`/encrypt/${encodeURIComponent(key)}/${encodeURIComponent(value)}`);
+            let result = await response.text();
+            document.getElementById("result").innerText = result;
+        }
+
+        async function decrypt() {
+            let key = document.getElementById("key").value;
+            let value = document.getElementById("value").value;
+            if (!key || !value) {
+                alert("Veuillez remplir tous les champs !");
+                return;
+            }
+            let response = await fetch(`/decrypt/${encodeURIComponent(key)}/${encodeURIComponent(value)}`);
+            let result = await response.text();
+            document.getElementById("result").innerText = result;
+        }
+    </script>
+</body>
+</html>
