@@ -33,7 +33,7 @@ def index():
                     decrypted_text = f"Erreur : {e}"
 
     # On renvoie les valeurs calculées au template
-    return render_template("index.html",
+    return render_template("hello.html",
                            encrypted_text=encrypted_text,
                            decrypted_text=decrypted_text)
 
