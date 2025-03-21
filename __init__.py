@@ -1,48 +1,41 @@
+from flask import Flask, render_template, request
 from cryptography.fernet import Fernet
-from flask import Flask, render_template
-import os
+import base64, hashlib
 
 app = Flask(__name__)
 
-# 📌 Fichier pour stocker la clé de chiffrement
-KEY_FILE = "secret.key"
+@app.route("/", methods=["GET", "POST"])
+def index():
+    encrypted_text = ""
+    decrypted_text = ""
 
-# 🔑 Fonction pour charger ou générer une clé persistante
-def load_key():
-    if os.path.exists(KEY_FILE):
-        with open(KEY_FILE, "rb") as key_file:
-            return key_file.read()
-    else:
-        key = Fernet.generate_key()
-        with open(KEY_FILE, "wb") as key_file:
-            key_file.write(key)
-        return key
+    if request.method == "POST":
+        user_key = request.form.get("user_key")   # Clé personnelle saisie
+        value = request.form.get("value")         # Texte à chiffrer/déchiffrer
+        action = request.form.get("action")       # "encrypt" ou "decrypt"
 
-# Charger la clé une seule fois au démarrage
-key = load_key()
-fernet = Fernet(key)
+        if user_key and value and action:
+            try:
+                # On dérive la clé Fernet depuis la clé utilisateur (pour la démo)
+                derived_key = base64.urlsafe_b64encode(hashlib.sha256(user_key.encode()).digest())
+                f = Fernet(derived_key)
 
-@app.route('/', methods=['GET','POST'])
-def hello_world():
-    return render_template('hello.html')  # Assure-toi que hello.html existe
+                if action == "encrypt":
+                    encrypted_text = f.encrypt(value.encode()).decode()
+                elif action == "decrypt":
+                    decrypted_text = f.decrypt(value.encode()).decode()
 
-# 🔐 Route pour chiffrer une valeur
-@app.route('/encrypt/<string:valeur>')
-def encryptage(valeur):
-    try:
-        token = fernet.encrypt(valeur.encode())  # Chiffrement
-        return f"Valeur encryptée : {token.decode()}"
-    except Exception as e:
-        return f"Erreur d'encryptage : {str(e)}"
+            except Exception as e:
+                # En cas d'erreur (mauvaise clé, etc.)
+                if action == "encrypt":
+                    encrypted_text = f"Erreur : {e}"
+                else:
+                    decrypted_text = f"Erreur : {e}"
 
-# 🔓 Route pour déchiffrer une valeur
-@app.route('/decrypt/<string:valeur>')
-def decryptage(valeur):
-    try:
-        decrypted = fernet.decrypt(valeur.encode())  # Déchiffrement
-        return f"Valeur décryptée : {decrypted.decode()}"
-    except Exception as e:
-        return f"Erreur de déchiffrement : {str(e)}"
+    # On renvoie les valeurs calculées au template
+    return render_template("index.html",
+                           encrypted_text=encrypted_text,
+                           decrypted_text=decrypted_text)
 
 if __name__ == "__main__":
     app.run(debug=True)
